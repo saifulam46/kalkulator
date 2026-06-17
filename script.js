@@ -6,15 +6,10 @@
 
   const OP_SYMBOLS = { "+": "+", "-": "−", "*": "×", "/": "÷" };
 
-  const state = {
-    current: "0",   // angka yang sedang diketik
-    previous: null, // operand sebelumnya
-    operator: null, // operator yang dipilih
-    overwrite: false, // true = ketikan berikutnya menimpa display
-  };
+  const calc = window.CalculatorCore.createCalculator();
 
   function formatNumber(value) {
-    if (value === "" || value === "-") return value;
+    if (value === "" || value === "-" || value === "Error") return value || "0";
     const num = Number(value);
     if (!isFinite(num)) return "Error";
     // Pertahankan input mentah jika sedang mengetik desimal
@@ -26,107 +21,25 @@
   }
 
   function updateDisplay() {
-    resultEl.textContent = formatNumber(state.current);
-    if (state.operator && state.previous !== null) {
-      historyEl.textContent =
-        formatNumber(state.previous) + " " + OP_SYMBOLS[state.operator];
+    resultEl.textContent = formatNumber(calc.getCurrent());
+    const op = calc.getOperator();
+    const prev = calc.getPrevious();
+    if (op && prev !== null) {
+      historyEl.textContent = formatNumber(prev) + " " + OP_SYMBOLS[op];
     } else {
       historyEl.textContent = "";
     }
   }
 
-  function inputNumber(digit) {
-    if (state.overwrite) {
-      state.current = digit;
-      state.overwrite = false;
-    } else {
-      state.current = state.current === "0" ? digit : state.current + digit;
-    }
-    updateDisplay();
-  }
-
-  function inputDecimal() {
-    if (state.overwrite) {
-      state.current = "0.";
-      state.overwrite = false;
-    } else if (!state.current.includes(".")) {
-      state.current += ".";
-    }
-    updateDisplay();
-  }
-
-  function chooseOperator(op) {
-    if (state.operator && !state.overwrite) {
-      compute();
-    }
-    state.previous = state.current;
-    state.operator = op;
-    state.overwrite = true;
-    updateDisplay();
-  }
-
-  function compute() {
-    if (state.operator === null || state.previous === null) return;
-    const a = Number(state.previous);
-    const b = Number(state.current);
-    let res;
-    switch (state.operator) {
-      case "+": res = a + b; break;
-      case "-": res = a - b; break;
-      case "*": res = a * b; break;
-      case "/": res = b === 0 ? NaN : a / b; break;
-      default: return;
-    }
-    if (!isFinite(res)) {
-      state.current = "Error";
-    } else {
-      // Batasi presisi floating point
-      state.current = String(Math.round(res * 1e10) / 1e10);
-    }
-    state.previous = null;
-    state.operator = null;
-    state.overwrite = true;
-  }
-
-  function equals() {
-    compute();
-    historyEl.textContent = "";
-    resultEl.textContent = formatNumber(state.current);
-  }
-
-  function clearAll() {
-    state.current = "0";
-    state.previous = null;
-    state.operator = null;
-    state.overwrite = false;
-    updateDisplay();
-  }
-
-  function deleteLast() {
-    if (state.overwrite || state.current === "Error") {
-      state.current = "0";
-      state.overwrite = false;
-    } else if (state.current.length <= 1) {
-      state.current = "0";
-    } else {
-      state.current = state.current.slice(0, -1);
-    }
-    updateDisplay();
-  }
-
-  function percent() {
-    state.current = String(Number(state.current) / 100);
-    updateDisplay();
-  }
-
   function handleAction(action) {
     switch (action) {
-      case "clear": clearAll(); break;
-      case "delete": deleteLast(); break;
-      case "percent": percent(); break;
-      case "decimal": inputDecimal(); break;
-      case "equals": equals(); break;
+      case "clear": calc.clearAll(); break;
+      case "delete": calc.deleteLast(); break;
+      case "percent": calc.percent(); break;
+      case "decimal": calc.inputDecimal(); break;
+      case "equals": calc.equals(); break;
     }
+    updateDisplay();
   }
 
   // Event delegation untuk klik tombol
@@ -134,11 +47,11 @@
     const btn = e.target.closest("button");
     if (!btn) return;
     if (btn.dataset.num !== undefined) {
-      if (state.current === "Error") clearAll();
-      inputNumber(btn.dataset.num);
+      calc.inputNumber(btn.dataset.num);
+      updateDisplay();
     } else if (btn.dataset.op !== undefined) {
-      if (state.current === "Error") return;
-      chooseOperator(btn.dataset.op);
+      calc.chooseOperator(btn.dataset.op);
+      updateDisplay();
     } else if (btn.dataset.action !== undefined) {
       handleAction(btn.dataset.action);
     }
@@ -148,28 +61,29 @@
   document.addEventListener("keydown", function (e) {
     const key = e.key;
     if (key >= "0" && key <= "9") {
-      if (state.current === "Error") clearAll();
-      inputNumber(key);
+      calc.inputNumber(key);
+      updateDisplay();
     } else if (key === ".") {
-      inputDecimal();
+      calc.inputDecimal();
+      updateDisplay();
     } else if (["+", "-", "*", "/"].includes(key)) {
-      if (state.current !== "Error") chooseOperator(key);
+      calc.chooseOperator(key);
+      updateDisplay();
     } else if (key === "Enter" || key === "=") {
       e.preventDefault();
-      equals();
+      calc.equals();
+      updateDisplay();
     } else if (key === "Backspace") {
-      deleteLast();
+      calc.deleteLast();
+      updateDisplay();
     } else if (key === "Escape") {
-      clearAll();
+      calc.clearAll();
+      updateDisplay();
     } else if (key === "%") {
-      percent();
+      calc.percent();
+      updateDisplay();
     }
   });
-
-  // Ekspor untuk keperluan testing
-  if (typeof module !== "undefined" && module.exports) {
-    module.exports = { state, chooseOperator, compute, inputNumber, equals };
-  }
 
   updateDisplay();
 })();

@@ -1,0 +1,9 @@
+{
+  "name": "kalkulator",
+  "version": "1.0.0",
+  "description": "Kalkulator webapp sederhana dengan unit test",
+  "scripts": {
+    "test": "node --test"
+  },
+  "license": "MIT"
+}

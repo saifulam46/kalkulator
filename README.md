@@ -22,11 +22,26 @@ python3 -m http.server 8000
 
 ## Struktur
 
-| File         | Keterangan                       |
-| ------------ | -------------------------------- |
-| `index.html` | Struktur halaman & tombol        |
-| `style.css`  | Tampilan dan layout              |
-| `script.js`  | Logika kalkulator & input        |
+| File                 | Keterangan                              |
+| -------------------- | --------------------------------------- |
+| `index.html`         | Struktur halaman & tombol               |
+| `style.css`          | Tampilan dan layout                     |
+| `calculator.js`      | Logika kalkulator murni (tanpa DOM)     |
+| `script.js`          | Penghubung DOM & input keyboard         |
+| `calculator.test.js` | Unit test (Node built-in test runner)   |
+
+## Unit Test
+
+Logika kalkulator dipisah ke `calculator.js` agar bisa di-test tanpa browser.
+Test memakai test runner bawaan Node (`node:test`) — **tanpa dependency**.
+
+```bash
+npm test
+```
+
+Mencakup: operasi dasar, pembagian nol, presisi floating point
+(`0.1 + 0.2 = 0.3`), operasi berantai, ganti operator, desimal,
+persen, hapus digit, reset, dan pemulihan dari `Error`.
 
 ## Keyboard Shortcut
 
